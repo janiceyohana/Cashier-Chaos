@@ -17,6 +17,7 @@ function GameComponent({ gs }: GameServiceProps) {
         gs.initState({
           cash: emptyCash(),
           score: 0,
+          remainingLives: gs.getCurrLevelDetails().lives,
         });
 
         gs.addSessionEndListner((result) => {
