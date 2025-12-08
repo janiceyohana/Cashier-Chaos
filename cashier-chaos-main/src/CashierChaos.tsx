@@ -186,9 +186,21 @@ export function CashierChaos() {
 
         <button
           className="block pt-1 pb-2 mx-auto text-xl font-bold text-white bg-green-600 shadow-xl rounded-xl w-80 md:scale-125 lg:scale-150"
-          onClick={() => {
+          onClick={() =>
+          {
+
+            //Calculate the user inputs
             const a_hundreds = [20, 10, 5, 2, 1].map((x) => cash[x] * x).reduce((a, b) => a + b);
             const a_cents = [0.5, 0.2, 0.1].map((x) => Math.round(cash[x] * x * 100)).reduce((a, b) => a + b);
+
+            //Convert the cents to real value
+            const playerTotal = a_hundreds + a_cents / 100;
+
+            //Calculate correct change (target)
+            const correctTotal = hundreds + cents / 100;
+
+            //Compare and check
+            setResult(playerTotal === correctTotal ? "success" : "error");
           }}
         >
           SUBMIT
