@@ -16,6 +16,7 @@ function GameComponent({ gs }: GameServiceProps) {
       .then(() => {
         gs.initState({
           cash: emptyCash(),
+          score: 0,
         });
 
         gs.addSessionEndListner((result) => {
@@ -54,7 +55,12 @@ function GameComponent({ gs }: GameServiceProps) {
     return <h1>Game Over!</h1>;
   }
 
-  return <CashierChaos />;
+  // Wraping the game logic into GameServiceWrapper
+  return (
+    <GameServiceWrapper gs={gs}>
+      <CashierChaos />
+    </GameServiceWrapper>
+  );
 }
 
 // whatever you do just make sure you export this
