@@ -25,6 +25,19 @@ function getAmount(multiple: number) {
   };
 }
 
+//Mapping image to path, encode space
+function mapCustomerKeyToPublicPath(key: string) {
+  const match = key.match(/^person(\d+)_(\d+)$/);
+  if (!match) return "";
+
+  const [, personNum, variant] = match;
+
+  const folder = `person (${personNum})`;
+  const encodedFolder = encodeURIComponent(folder); // becomes person%20(1)
+
+  return `/images/customers/${encodedFolder}/(${variant}).png`;
+}
+
 export function emptyCash() {
   return {
     ...Object.fromEntries(HUNDREDS.map((x) => [x, 0])),
@@ -61,8 +74,12 @@ export function CashierChaos() {
 
   const { multiple, cashRegisterWorking } = gs.getCurrLevelDetails();
 
-  const customerSrc = useMemo(() => gs.assets[`person${getRandomNum(8, 1)}_${getRandomNum(4, 1)}`], [customer]);
-  const { hundreds, cents } = useMemo(() => getAmount(multiple), [customer]);
+  const customerSrc = useMemo(() => {
+    const key = `person${getRandomNum(8, 1)}_${getRandomNum(4, 1)}`;
+    return mapCustomerKeyToPublicPath(key);
+  }, [customer]);
+
+  const { hundreds, cents } = useMemo(() => getAmount(multiple), [customer, multiple]);
   const borrow = cents > 0 ? 1 : 0;
 
   return (
