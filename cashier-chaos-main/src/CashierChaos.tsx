@@ -6,6 +6,7 @@ import { Highlight } from "./components/Highlight";
 import { TopBar } from "./components/TopBar";
 import Lottie, { LottieRefCurrentProps } from "lottie-react";
 import "./styles/game.css";
+import { ScoreBoard } from "./components/ScoreBoard";
 
 const HUNDREDS = [20, 10, 5, 2];
 const CENTS = [1, 0.5, 0.2, 0.1];
@@ -52,7 +53,7 @@ export function emptyCash() {
  */
 export function CashierChaos() {
   const gs = useGameService();
-  const { cash, customer, remainingLives } = gs.useGameState();
+  const { cash, customer, remainingLives, score } = gs.useGameState();
   const { result, setResult, resetResult } = useResult();
 
   //Add Lottie for correct and wrong answers
@@ -144,6 +145,7 @@ export function CashierChaos() {
       )}
 
       <TopBar />
+      <ScoreBoard />
 
       <div
         className="relative flex flex-col items-center justify-center flex-grow overflow-hidden bg-center bg-no-repeat bg-cover"
@@ -295,6 +297,11 @@ export function CashierChaos() {
               correctSfx.current.play();
             } else {
               wrongSfx.current.play();
+            }
+
+            //Scoring logic (add +10 points)
+            if (isCorrect) {
+              gs.updateState({ score: score + 10 });
             }
           }}
         >
