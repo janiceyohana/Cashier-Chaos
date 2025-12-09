@@ -56,6 +56,27 @@ export function CashierChaos() {
   const { cash, customer, remainingLives, score } = gs.useGameState();
   const { result, setResult, resetResult } = useResult();
 
+  const { multiple, cashRegisterWorking } = gs.getCurrLevelDetails();
+  const [timeLeft, setTimeLeft] = useState(gs.getCurrLevelDetails().time);
+
+  useEffect(() => {
+    // Reset timer whenever the level changes
+    setTimeLeft(gs.getCurrLevelDetails().time);
+  }, [gs.getCurrLevelDetails().multiple]);
+
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      gs.endSession("error"); // time up
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev: number) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timeLeft]);
+
   //Add Lottie for correct and wrong answers
   const [animations, setAnimations] = useState<{ correct: any; wrong: any } | null>(null);
 
@@ -77,6 +98,8 @@ export function CashierChaos() {
     fetchAnimations();
   }, []);
 
+  const [levelKey, setLevelKey] = useState(0); //Add levelKey state for timer needs
+
   useEffect(() => {
     if (!result) return;
 
@@ -84,10 +107,22 @@ export function CashierChaos() {
       if (result === "success") {
         if (customer === 4) {
           levelCompletedSfx.current.play(); //Play next level sound effect
+          gs.updateState({ cash: emptyCash(), customer: 1 });
+          gs.nextLevel();
+
+          //For timer
+          setLevelKey((k) => k + 1);
+
+          //Store score and update to state
+          const prevScore = gs.useGameState().score;
+          gs.updateState({ score: prevScore });
+
+          gs.resetSession();
           return gs.endSession("success");
         }
 
         gs.updateState({ customer: customer + 1, cash: emptyCash() });
+
       } else if (result === "error") {
         if (remainingLives === 1) {
           gameOverSfx.current.play(); //Play game over sound effect
@@ -95,6 +130,7 @@ export function CashierChaos() {
         }
 
         gs.updateState({ remainingLives: remainingLives - 1 });
+
       }
 
       resetResult();
@@ -108,8 +144,6 @@ export function CashierChaos() {
       lottieRef.current.setSpeed(4);
     }
   }, []);
-
-  const { multiple, cashRegisterWorking } = gs.getCurrLevelDetails();
 
   const customerSrc = useMemo(() => {
     const key = `person${getRandomNum(8, 1)}_${getRandomNum(4, 1)}`;
@@ -144,7 +178,11 @@ export function CashierChaos() {
         </div>
       )}
 
-      <TopBar />
+      //To make it re-run from initial time
+      <div key={levelKey}>
+        <TopBar />
+      </div>
+
       <ScoreBoard />
 
       <div
@@ -286,13 +324,10 @@ export function CashierChaos() {
             //Calculate correct change (target)
             const correctTotal = hundreds + cents / 100;
 
-            //Compare and check
-            setResult(playerTotal === correctTotal ? "success" : "error");
-
-            //Add sound effects for correct/wrong answer
             const isCorrect = playerTotal === correctTotal;
             setResult(isCorrect ? "success" : "error");
 
+            //Add sound effects for correct/wrong answer
             if (isCorrect) {
               correctSfx.current.play();
             } else {
