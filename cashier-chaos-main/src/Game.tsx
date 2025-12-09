@@ -2,6 +2,7 @@ import { CenterLoading, GameServiceProps, GameServiceWrapper, useComponentRefres
 import { useEffect, useState } from "react";
 import { CashierChaos, emptyCash } from "./CashierChaos";
 import { Instructions } from "./components/Instructions";
+import { LandingPage } from "./components/LandingPage";
 
 let isInstructionsShownAlready = false;
 
@@ -9,6 +10,7 @@ function GameComponent({ gs }: GameServiceProps) {
   const [isGameReady, setIsGameReady] = useState(false);
   const [showInstructions, setShowInstruction] = useState(!isInstructionsShownAlready);
   const refresh = useComponentRefresh();
+  const [showLanding, setShowLanding] = useState(() => !isInstructionsShownAlready);
 
   useEffect(() => {
     // wait for assets to be loaded
@@ -49,8 +51,28 @@ function GameComponent({ gs }: GameServiceProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  //Landing Page First
+  if (showLanding) {
+    return (
+      <LandingPage
+        onNext={() => {
+          setShowLanding(false);
+          setShowInstruction(true);
+        }}
+      />
+    );
+  }
+
   if (showInstructions) {
-    return <Instructions onStart={() => (setShowInstruction(false), (isInstructionsShownAlready = true))} />;
+    return (
+      <Instructions
+        onStart={() => (setShowInstruction(false), (isInstructionsShownAlready = true))}
+        onBack={() => {
+          setShowInstruction(false);
+          setShowLanding(true);
+        }}
+      />
+    );
   } else if (!isGameReady) {
     return <CenterLoading />;
   } else if (gs.isGameComplete()) {

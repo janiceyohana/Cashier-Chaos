@@ -4,11 +4,13 @@ import { ASSETS } from "../constants";
 
 interface StartPageProps {
   onStart?: () => void; // function to run when start button is played
+  onBack?: () => void;
 }
 
 export function Instructions(props: StartPageProps) {
   const onBack = () => {
     // TODO - implement back button
+    props.onBack?.();
   };
 
   return (
