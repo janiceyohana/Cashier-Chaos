@@ -58,6 +58,15 @@ export function CashierChaos() {
   //Add Lottie for correct and wrong answers
   const [animations, setAnimations] = useState<{ correct: any; wrong: any } | null>(null);
 
+  //Import sound effects
+  const correctSfx = useRef(new Audio("/sounds/correct.mp3"));
+  const wrongSfx = useRef(new Audio("/sounds/wrong.mp3"));
+  const levelCompletedSfx = useRef(new Audio("/sounds/level_completed_3.mp3"));
+  const plop1Sfx = useRef(new Audio("/sounds/plop1.mp3"));
+  const plop2Sfx = useRef(new Audio("/sounds/plop2.mp3"));
+  // const tickSfx = useRef(new Audio("/sounds/tick.mp3"));
+  const gameOverSfx = useRef(new Audio("/sounds/game_over.mp3"));
+
   useEffect(() => {
     const fetchAnimations = async () => {
       const correct = await fetch("/lotties/correct.json").then((res) => res.json());
@@ -72,11 +81,17 @@ export function CashierChaos() {
 
     setTimeout(() => {
       if (result === "success") {
-        if (customer === 4) return gs.endSession("success");
+        if (customer === 4) {
+          levelCompletedSfx.current.play(); //Play next level sound effect
+          return gs.endSession("success");
+        }
 
         gs.updateState({ customer: customer + 1, cash: emptyCash() });
       } else if (result === "error") {
-        if (remainingLives === 1) return gs.endSession("error");
+        if (remainingLives === 1) {
+          gameOverSfx.current.play(); //Play game over sound effect
+          return gs.endSession("error");
+        }
 
         gs.updateState({ remainingLives: remainingLives - 1 });
       }
@@ -165,7 +180,11 @@ export function CashierChaos() {
               <button
                 key={x}
                 className="relative w-10 md:w-24 lg:w-28"
-                onClick={() => gs.updateState({ cash: { ...cash, [x]: cash[x] - 1 } })}
+                onClick={() => {
+                  gs.updateState({ cash: { ...cash, [x]: cash[x] - 1 } });
+                  //Play plop1 sound
+                  if (HUNDREDS.includes(x)) plop1Sfx.current.play();
+                }}
                 style={{ display: cash[x] ? undefined : "none" }}
               >
                 <img
@@ -183,7 +202,11 @@ export function CashierChaos() {
                 <button
                   key={x}
                   className="relative"
-                  onClick={() => gs.updateState({ cash: { ...cash, [x]: cash[x] - 1 } })}
+                  onClick={() => {
+                    gs.updateState({ cash: { ...cash, [x]: cash[x] - 1 } });
+                    //Play plop2 sound
+                    if (CENTS.includes(x)) plop2Sfx.current.play();
+                  }}
                   style={{ display: cash[x] ? undefined : "none" }}
                 >
                   <img
@@ -214,7 +237,11 @@ export function CashierChaos() {
             <button
               key={x}
               className="bg-[#303A43] pt-2 px-1 w-20 h-[185px] md:h-56 md:w-24 lg:w-28 lg:h-64 relative"
-              onClick={() => gs.updateState({ cash: { ...cash, [x]: cash[x] + 1 } })}
+              onClick={() => {
+                gs.updateState({ cash: { ...cash, [x]: cash[x] + 1 } });
+                //Play plop1 sound
+                if (HUNDREDS.includes(x)) plop1Sfx.current.play();
+              }}
             >
               <img src={gs.assets["dollar_" + x]} className="absolute w-[72px] md:w-[88px] lg:w-[104px]" />
               <motion.img key={`${x}-${cash[x] + 1}`} layoutId={`${x}-${cash[x] + 1}`} src={gs.assets["dollar_" + x]} />
@@ -225,7 +252,11 @@ export function CashierChaos() {
             <button
               key={x}
               className="bg-[#303A43] size-20 flex justify-center items-center pt-2 relative md:size-24 lg:size-28"
-              onClick={() => gs.updateState({ cash: { ...cash, [x]: cash[x] + 1 } })}
+              onClick={() => {
+                gs.updateState({ cash: { ...cash, [x]: cash[x] + 1 } });
+                //Play plop2 sound
+                if (CENTS.includes(x)) plop2Sfx.current.play();
+              }}
             >
               <img src={gs.assets["cent_" + x * 100]} className="absolute size-16 md:size-20 lg:size-24" />
               <motion.img
@@ -255,6 +286,16 @@ export function CashierChaos() {
 
             //Compare and check
             setResult(playerTotal === correctTotal ? "success" : "error");
+
+            //Add sound effects for correct/wrong answer
+            const isCorrect = playerTotal === correctTotal;
+            setResult(isCorrect ? "success" : "error");
+
+            if (isCorrect) {
+              correctSfx.current.play();
+            } else {
+              wrongSfx.current.play();
+            }
           }}
         >
           SUBMIT
