@@ -31,28 +31,28 @@ export const LEVELS = [
   {
     lives: 3,
     time: 90,
-    cashRegisterWorking: false,
+    cashRegisterWorking: true,
     multiple: 1,
   },
   // level 6
   {
     lives: 3,
     time: 90,
-    cashRegisterWorking: false,
+    cashRegisterWorking: true,
     multiple: 0.5,
   },
   // level 7
   {
     lives: 3,
     time: 90,
-    cashRegisterWorking: false,
+    cashRegisterWorking: true,
     multiple: 0.1,
   },
   // level 8
   {
     lives: 3,
     time: 90,
-    cashRegisterWorking: false,
+    cashRegisterWorking: true,
     multiple: 0.1,
   },
 ];
