@@ -131,7 +131,7 @@ export function CashierChaos() {
       <TopBar />
 
       <div
-        className="relative flex flex-col items-center justify-center flex-grow overflow-hidden"
+        className="relative flex flex-col items-center justify-center flex-grow overflow-hidden bg-center bg-no-repeat bg-cover"
         style={{
           backgroundImage: `url(${gs.assets.background})`,
         }}
