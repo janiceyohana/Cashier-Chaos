@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import { getRandomNum, useGameService } from "gamez";
 import { useResult } from "gamez/src/hooks/useResult";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Highlight } from "./components/Highlight";
 import { TopBar } from "./components/TopBar";
+import Lottie, { LottieRefCurrentProps } from "lottie-react";
 import "./styles/game.css";
 
 const HUNDREDS = [20, 10, 5, 2];
@@ -54,6 +55,18 @@ export function CashierChaos() {
   const { cash, customer, remainingLives } = gs.useGameState();
   const { result, setResult, resetResult } = useResult();
 
+  //Add Lottie for correct and wrong answers
+  const [animations, setAnimations] = useState<{ correct: any; wrong: any } | null>(null);
+
+  useEffect(() => {
+    const fetchAnimations = async () => {
+      const correct = await fetch("/lotties/correct.json").then((res) => res.json());
+      const wrong = await fetch("/lotties/wrong.json").then((res) => res.json());
+      setAnimations({ correct, wrong });
+    };
+    fetchAnimations();
+  }, []);
+
   useEffect(() => {
     if (!result) return;
 
@@ -72,6 +85,14 @@ export function CashierChaos() {
     }, 500);
   }, [result]);
 
+  //For setting the speed for longer animation
+  const lottieRef = useRef<LottieRefCurrentProps>(null);
+  useEffect(() => {
+    if (lottieRef.current) {
+      lottieRef.current.setSpeed(4);
+    }
+  }, []);
+
   const { multiple, cashRegisterWorking } = gs.getCurrLevelDetails();
 
   const customerSrc = useMemo(() => {
@@ -89,6 +110,22 @@ export function CashierChaos() {
           className="absolute top-0 bottom-0 left-0 right-0 z-20 mx-auto my-auto size-40 md:scale-125 lg:scale-150"
           src={result === "success" ? gs.assets.right : gs.assets.wrong}
         />
+      )}
+
+      {/* Rendering Lottie */}
+      {result && animations && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30">
+          <Lottie
+            animationData={result === "success" ? animations.correct : animations.wrong}
+            style={{
+              width: result === "success" ? 825 : 400,
+              height: result === "success" ? 825 : 400,
+            }}
+            loop={false}
+            onComplete={() => resetResult()}
+            lottieRef={lottieRef}
+          />
+        </div>
       )}
 
       <TopBar />
