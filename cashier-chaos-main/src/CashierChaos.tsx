@@ -56,8 +56,8 @@ export function CashierChaos() {
   const { cash, customer, remainingLives, score } = gs.useGameState();
   const { result, setResult, resetResult } = useResult();
 
-  const { multiple, cashRegisterWorking } = gs.getCurrLevelDetails();
-  const [timeLeft, setTimeLeft] = useState(gs.getCurrLevelDetails().time);
+  const { multiple, cashRegisterWorking } = gs.getCurrLevelDetails() || {};
+  const [timeLeft, setTimeLeft] = gs.getCurrLevelDetails() ? useState(gs.getCurrLevelDetails().time) : useState(0);
   const [timerActive, setTimerActive] = useState(true);
   const [levelKey, setLevelKey] = useState(0); //Add levelKey state for timer needs
 
@@ -69,11 +69,11 @@ export function CashierChaos() {
 
   useEffect(() => {
     if (!timerActive) return; //Stop if game over
-    if (gs.isSessionEnded()) return; //Stop is session ended
-    if (timeLeft <= 0) {
+    if (gs.isSessionEnded()) return; //Stop if session ended
+    if (timeLeft <= 0 && !gs.isSessionEnded()) {
       setTimerActive(false); //Stop timer
       gameOverSfx.current.play();
-      gs.endSession("error");
+      gs.endSession("timeout");
       return;
     }
 
@@ -85,7 +85,7 @@ export function CashierChaos() {
   }, [timeLeft, timerActive, gs]);
 
   //Add Lottie for correct and wrong answers
-  const [animations, setAnimations] = useState<{ correct: any; wrong: any } | null>(null);
+  const [animations, setAnimations] = useState<{ correct: any; wrong: any; confetti?: any } | null>(null);
 
   //Import sound effects
   const correctSfx = useRef(new Audio("/sounds/correct.mp3"));
@@ -96,11 +96,15 @@ export function CashierChaos() {
   // const tickSfx = useRef(new Audio("/sounds/tick.mp3"));
   const gameOverSfx = useRef(new Audio("/sounds/game_over.mp3"));
 
+  const [showConfetti, setShowConfetti] = useState(false);
+  const confettiRef = useRef<LottieRefCurrentProps>(null);
+
   useEffect(() => {
     const fetchAnimations = async () => {
       const correct = await fetch("/lotties/correct.json").then((res) => res.json());
       const wrong = await fetch("/lotties/wrong.json").then((res) => res.json());
-      setAnimations({ correct, wrong });
+      const confetti = await fetch("/lotties/confetti.json").then((res) => res.json());
+      setAnimations({ correct, wrong, confetti });
     };
     fetchAnimations();
   }, []);
@@ -110,20 +114,17 @@ export function CashierChaos() {
 
     setTimeout(() => {
       if (result === "success") {
-        if (customer === 4) {
+        if (customer === 1) {
           levelCompletedSfx.current.play(); //Play next level sound effect
 
           gs.updateState({ cash: emptyCash(), customer: 1 });
 
-          //Increment level first
-          console.log("Current level before gs.nextLevel:", gs.getCurrLevel());
+          // //Increment level first
           gs.nextLevel();
-          console.log("Current level after gs.nextLevel:", gs.getCurrLevel());
 
           //Check GAME completion
           if (gs.isGameComplete()) {
-            console.log("Game complete! Ending session...");
-              console.log("Final score:", score);
+            setShowConfetti(true);
             gs.endSession("success");
             return;
           }
@@ -135,7 +136,7 @@ export function CashierChaos() {
           const prevScore = gs.useGameState().score;
           gs.updateState({ score: prevScore });
 
-          return ;
+          return;
         }
 
         gs.updateState({ customer: customer + 1, cash: emptyCash() });
@@ -143,10 +144,9 @@ export function CashierChaos() {
         if (remainingLives <= 1) {
           gameOverSfx.current.play(); //Play game over sound effect
           gs.updateState({ remainingLives: 0 });
-          const finalScore = score;
-          console.log("Final score on game over:", finalScore);
-          resetResult();
-          return gs.endSession("error");
+          // resetResult();
+          gs.endSession("error");
+          return;
         }
 
         gs.updateState({ remainingLives: remainingLives - 1 });
@@ -181,7 +181,7 @@ export function CashierChaos() {
         />
       )}
 
-      {/* Rendering Lottie */}
+      {/* Rendering Lotties */}
       {result && animations && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30">
           <Lottie
@@ -193,6 +193,17 @@ export function CashierChaos() {
             loop={false}
             onComplete={() => resetResult()}
             lottieRef={lottieRef}
+          />
+        </div>
+      )}
+      {showConfetti && animations?.confetti && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
+          <Lottie
+            animationData={animations.confetti}
+            loop={false}
+            lottieRef={confettiRef}
+            style={{ width: "100%", height: "100%" }}
+            onComplete={() => setShowConfetti(false)}
           />
         </div>
       )}

@@ -37,14 +37,19 @@ function GameComponent({ gs }: GameServiceProps) {
   const handleRestart = () => {
     setShowGameOverModal(false);
     gs.resetSession();
+    const firstLevelDetails = gs.getCurrLevelDetails();
+    const initialLives = firstLevelDetails?.lives ?? 3;
     gs.initState({
       cash: emptyCash(),
       customer: 1,
-      remainingLives: gs.getCurrLevelDetails().lives,
+      remainingLives: initialLives,
       score: 0,
     });
     setStoredScore(0);
     refresh();
+
+    setIsGameReady(true);
+    console.log(isGameReady, "isgameready");
   };
 
   const handleBackToHome = () => {
@@ -53,14 +58,22 @@ function GameComponent({ gs }: GameServiceProps) {
     setStoredScore(0);
     setShowLanding(true);
     isInstructionsShownAlready = false;
+    setShowInstruction(false);
+    setIsGameReady(false);
+
+    console.log(isGameReady, "isgameready");
     refresh();
   };
+
+  useEffect(() => {
+    console.log("showGameOverModal changed:", showGameOverModal);
+  }, [showGameOverModal]);
 
   useEffect(() => {
     // wait for assets to be loaded
     gs.preloadAssets()
       .then(() => {
-        // initialState
+        // initialize state
         gs.initState({
           cash: emptyCash(),
           score: 0,
@@ -69,31 +82,34 @@ function GameComponent({ gs }: GameServiceProps) {
         });
 
         gs.addSessionEndListner((result) => {
-          // do something when the session ends (e.g., display results, save data)
-
           const gameState = gs.getState();
           const finalScore = gameState?.score || 0;
           setStoredScore(finalScore);
-          console.log("Storing score:", finalScore);
 
           const report = gs.collectReport({
             level: gs.getCurrLevel(),
             result,
           });
-
           gs.saveReport(report);
 
+          // Handle game over
           if (result === "error") {
             gameOverSfx.current.play();
             setGameOverMessage("You ran out of lives!");
-            setShowGameOverModal(true);
-          } else if (result === "success") {
+            setShowGameOverModal(true); // modal will show on re-render
+          } else if (result === "timeout") {
+            gameOverSfx.current.play();
+            setGameOverMessage("You ran out of time!");
+            setShowGameOverModal(true); // modal will show on re-render
+          }
+          // Handle game completion
+          else if (result === "success") {
             if (gs.isGameComplete()) {
-              //Finished all levels
-              gameOverSfx.current.play();
               setGameOverMessage("You completed all levels, well done!");
               setShowGameOverModal(true);
-              refresh();
+            } else {
+              // optional: show "level completed" message
+              setGameOverMessage("Level completed!");
             }
           }
         });
@@ -101,12 +117,10 @@ function GameComponent({ gs }: GameServiceProps) {
         setIsGameReady(true);
       })
       .catch(() => {
-        // handle asset loading error
-        // alert("error");
+        // handle asset loading error if needed
       });
 
     return () => {
-      // reset the game when component unmounts
       gs.resetSession();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -141,22 +155,24 @@ function GameComponent({ gs }: GameServiceProps) {
   //Wrapping the game logic into GameServiceWrapper
   return (
     <>
-      {!gs.isGameComplete() && (
+      {isGameReady && (
         <GameServiceWrapper gs={gs}>
           <CashierChaos />
         </GameServiceWrapper>
       )}
 
       {/* Render Game Over modal */}
-      {(showGameOverModal || gs.isGameComplete()) && (
-        <GameOverModal
-          title="Game Over"
-          message={gameOverMessage}
-          buttonLabel="Restart"
-          onRestart={handleRestart}
-          onBackToHome={handleBackToHome}
-          score={storedScore}
-        />
+      {showGameOverModal && (
+        <>
+          <GameOverModal
+            title="Game Over"
+            message={gameOverMessage}
+            buttonLabel="Restart"
+            onRestart={handleRestart}
+            onBackToHome={handleBackToHome}
+            score={storedScore}
+          />
+        </>
       )}
     </>
   );
