@@ -1,10 +1,19 @@
 /* Your game related styles */
-.score-pulse {
-  animation: pop 0.3s ease-out;
-}
-
 @keyframes pop {
   0% { transform: scale(1); }
   50% { transform: scale(1.5); }
   100% { transform: scale(1); }
+}
+
+@keyframes button-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-pop {
+  animation: button-pop 0.25s ease-out;
+}
+
+.score-pulse {
+  animation: pop 0.3s ease-out;
 }
