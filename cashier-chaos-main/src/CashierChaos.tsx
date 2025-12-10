@@ -62,11 +62,6 @@ export function CashierChaos() {
   const [levelKey, setLevelKey] = useState(0); //Add levelKey state for timer needs
 
   useEffect(() => {
-    // Reset timer whenever the level changes
-    setTimeLeft(gs.getCurrLevelDetails().time);
-  }, [gs.getCurrLevelDetails().multiple]);
-
-  useEffect(() => {
     // Reset timer on new level
     setTimeLeft(gs.getCurrLevelDetails().time);
     setTimerActive(true); //Start timer
@@ -83,7 +78,7 @@ export function CashierChaos() {
     }
 
     const id = setInterval(() => {
-      setTimeLeft((prev:number) => prev - 1);
+      setTimeLeft((prev: number) => prev - 1);
     }, 1000);
 
     return () => clearInterval(id);
@@ -117,8 +112,21 @@ export function CashierChaos() {
       if (result === "success") {
         if (customer === 4) {
           levelCompletedSfx.current.play(); //Play next level sound effect
+
           gs.updateState({ cash: emptyCash(), customer: 1 });
+
+          //Increment level first
+          console.log("Current level before gs.nextLevel:", gs.getCurrLevel());
           gs.nextLevel();
+          console.log("Current level after gs.nextLevel:", gs.getCurrLevel());
+
+          //Check GAME completion
+          if (gs.isGameComplete()) {
+            console.log("Game complete! Ending session...");
+              console.log("Final score:", score);
+            gs.endSession("success");
+            return;
+          }
 
           //For timer
           setLevelKey((k) => k + 1);
@@ -134,13 +142,14 @@ export function CashierChaos() {
       } else if (result === "error") {
         if (remainingLives <= 1) {
           gameOverSfx.current.play(); //Play game over sound effect
-          gs.updateState({ remainingLives: 0 })
+          gs.updateState({ remainingLives: 0 });
+          const finalScore = score;
+          console.log("Final score on game over:", finalScore);
           resetResult();
           return gs.endSession("error");
         }
 
         gs.updateState({ remainingLives: remainingLives - 1 });
-
       }
 
       resetResult();

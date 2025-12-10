@@ -1,21 +1,30 @@
+import { useGameService } from "gamez";
+
 export function GameOverModal({
   title,
   message,
   buttonLabel,
   onRestart,
   onBackToHome,
+  score,
 }: {
   title: string;
   message: string;
   buttonLabel: string;
-    onRestart: () => void;
-  onBackToHome?: () => void
-}) {
+  onRestart: () => void;
+    onBackToHome?: () => void;
+    score:number
+  })
+{
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div className="bg-white rounded-2xl shadow-xl p-6  text-center w-80">
         <h1 className="text-3xl font-bold text-violet-700">{title}</h1>
         <p className="text-lg font-normal text-black my-4">{message}</p>
+
+        <p className="text-xl">Score:</p>
+        <p className="text-3xl text-yellow-300">{score}</p>
 
         <button
           onClick={onRestart}
