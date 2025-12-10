@@ -114,7 +114,7 @@ export function CashierChaos() {
 
     setTimeout(() => {
       if (result === "success") {
-        if (customer === 1) {
+        if (customer === 4) {
           levelCompletedSfx.current.play(); //Play next level sound effect
 
           gs.updateState({ cash: emptyCash(), customer: 1 });
