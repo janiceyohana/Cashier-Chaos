@@ -58,6 +58,8 @@ export function CashierChaos() {
 
   const { multiple, cashRegisterWorking } = gs.getCurrLevelDetails();
   const [timeLeft, setTimeLeft] = useState(gs.getCurrLevelDetails().time);
+  const [timerActive, setTimerActive] = useState(true);
+  const [levelKey, setLevelKey] = useState(0); //Add levelKey state for timer needs
 
   useEffect(() => {
     // Reset timer whenever the level changes
@@ -65,17 +67,27 @@ export function CashierChaos() {
   }, [gs.getCurrLevelDetails().multiple]);
 
   useEffect(() => {
+    // Reset timer on new level
+    setTimeLeft(gs.getCurrLevelDetails().time);
+    setTimerActive(true); //Start timer
+  }, [levelKey]);
+
+  useEffect(() => {
+    if (!timerActive) return; //Stop if game over
+    if (gs.isSessionEnded()) return; //Stop is session ended
     if (timeLeft <= 0) {
-      gs.endSession("error"); // time up
+      setTimerActive(false); //Stop timer
+      gameOverSfx.current.play();
+      gs.endSession("error");
       return;
     }
 
-    const interval = setInterval(() => {
-      setTimeLeft((prev: number) => prev - 1);
+    const id = setInterval(() => {
+      setTimeLeft((prev:number) => prev - 1);
     }, 1000);
 
-    return () => clearInterval(interval);
-  }, [timeLeft]);
+    return () => clearInterval(id);
+  }, [timeLeft, timerActive, gs]);
 
   //Add Lottie for correct and wrong answers
   const [animations, setAnimations] = useState<{ correct: any; wrong: any } | null>(null);
@@ -97,8 +109,6 @@ export function CashierChaos() {
     };
     fetchAnimations();
   }, []);
-
-  const [levelKey, setLevelKey] = useState(0); //Add levelKey state for timer needs
 
   useEffect(() => {
     if (!result) return;
@@ -122,11 +132,11 @@ export function CashierChaos() {
         }
 
         gs.updateState({ customer: customer + 1, cash: emptyCash() });
-
       } else if (result === "error") {
-        if (remainingLives === 1) {
+        if (remainingLives <= 1) {
           gameOverSfx.current.play(); //Play game over sound effect
-          return gs.endSession("error");
+          gs.endSession("error");
+          return ;
         }
 
         gs.updateState({ remainingLives: remainingLives - 1 });
@@ -178,7 +188,7 @@ export function CashierChaos() {
         </div>
       )}
 
-      //To make it re-run from initial time
+      {/* To make it re-run from initial time */}
       <div key={levelKey}>
         <TopBar />
       </div>
