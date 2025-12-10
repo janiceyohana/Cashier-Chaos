@@ -5,7 +5,8 @@ import { BiSolidStopwatch } from "react-icons/bi";
 export function TopBar() {
   const gs = useGameService();
   const { remainingLives } = gs.useGameState();
-  const { lives, time } = gs.getCurrLevelDetails();
+  const { lives } = gs.getCurrLevelDetails() ?? 0;
+  const { time } = gs.getCurrLevelDetails() ?? 0;
   const { countDown } = useCountDown(time, () => gs.endSession("timeout"), gs.isSessionEnded());
 
   return (
