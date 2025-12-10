@@ -127,16 +127,16 @@ export function CashierChaos() {
           const prevScore = gs.useGameState().score;
           gs.updateState({ score: prevScore });
 
-          gs.resetSession();
-          return gs.endSession("success");
+          return ;
         }
 
         gs.updateState({ customer: customer + 1, cash: emptyCash() });
       } else if (result === "error") {
         if (remainingLives <= 1) {
           gameOverSfx.current.play(); //Play game over sound effect
-          gs.endSession("error");
-          return ;
+          gs.updateState({ remainingLives: 0 })
+          resetResult();
+          return gs.endSession("error");
         }
 
         gs.updateState({ remainingLives: remainingLives - 1 });

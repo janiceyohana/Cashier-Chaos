@@ -1,8 +1,9 @@
 import { CenterLoading, GameServiceProps, GameServiceWrapper, useComponentRefresh } from "gamez";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CashierChaos, emptyCash } from "./CashierChaos";
 import { Instructions } from "./components/Instructions";
 import { LandingPage } from "./components/LandingPage";
+import { GameOverModal } from "./components/GameOverModal";
 
 let isInstructionsShownAlready = false;
 
@@ -11,11 +12,37 @@ function GameComponent({ gs }: GameServiceProps) {
   const [showInstructions, setShowInstruction] = useState(!isInstructionsShownAlready);
   const refresh = useComponentRefresh();
   const [showLanding, setShowLanding] = useState(() => !isInstructionsShownAlready);
+  const [showGameOverModal, setShowGameOverModal] = useState(false);
+  const [gameOverMessage, setGameOverMessage] = useState("");
+
+  //Import audio for gameover
+  const gameOverSfx = useRef(new Audio("/sounds/game_over.mp3"));
+
+  const handleRestart = () => {
+    setShowGameOverModal(false);
+    gs.resetSession();
+    gs.initState({
+      cash: emptyCash(),
+      customer: 1,
+      remainingLives: gs.getCurrLevelDetails().lives,
+      score: 0,
+    });
+    refresh();
+  };
+
+  const handleBackToHome = () => {
+    setShowGameOverModal(false);
+    gs.resetSession();
+    setShowLanding(true);
+    isInstructionsShownAlready = false;
+    refresh();
+  };
 
   useEffect(() => {
     // wait for assets to be loaded
     gs.preloadAssets()
       .then(() => {
+        // initialState
         gs.initState({
           cash: emptyCash(),
           score: 0,
@@ -31,17 +58,27 @@ function GameComponent({ gs }: GameServiceProps) {
           });
 
           gs.saveReport(report);
-          if (result === "success") gs.nextLevel();
 
-          alert(result);
-          refresh();
+          if (result === "error") {
+            gameOverSfx.current.play();
+            setGameOverMessage("You ran out of lives!");
+            setShowGameOverModal(true);
+          } else if (result === "success") {
+            if (gs.isGameComplete()) {
+              //Finished all levels
+              gameOverSfx.current.play();
+              setGameOverMessage("You completed all levels — well done!");
+              setShowGameOverModal(true);
+              refresh();
+            }
+          }
         });
 
         setIsGameReady(true);
       })
       .catch(() => {
         // handle asset loading error
-        alert("error");
+        // alert("error");
       });
 
     return () => {
@@ -75,14 +112,22 @@ function GameComponent({ gs }: GameServiceProps) {
     );
   } else if (!isGameReady) {
     return <CenterLoading />;
-  } else if (gs.isGameComplete()) {
-    return <h1>Game Over!</h1>;
   }
 
-  // Wraping the game logic into GameServiceWrapper
+  //Wrapping the game logic into GameServiceWrapper
   return (
     <GameServiceWrapper gs={gs}>
       <CashierChaos />
+      {/* Render Game Over modal */}
+      {(showGameOverModal || gs.isGameComplete()) && (
+        <GameOverModal
+          title="Game Over"
+          message={gameOverMessage}
+          buttonLabel="Restart"
+          onRestart={handleRestart}
+          onBackToHome={handleBackToHome}
+        />
+      )}
     </GameServiceWrapper>
   );
 }
